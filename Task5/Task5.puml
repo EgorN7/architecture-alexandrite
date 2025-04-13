@@ -1,0 +1,27 @@
+@startuml
+participant "Operator" as O
+participant "MES" as S
+participant "Cache" as C
+participant "MES DB" as DB
+
+== Чтение списка заказов (Cache-Aside) ==
+O -> S: Request: "Показать заказы"
+S -> C: Check cache
+alt Cache hit
+    C --> S: Return cached data
+    S --> O: Return orders from cache
+else Cache miss
+    S -> DB: Query orders from DB
+    DB --> S: Return orders
+    S -> C: Put data into cache
+    S --> O: Return orders
+end
+
+== Изменение статуса заказа и инвалидация кэша ==
+O -> S: Update order status (order_id=1234)
+S -> DB: UPDATE orders SET status = 'MANUFACTURING_COMPLETED' WHERE order_id=1234
+DB --> S: OK
+S -> C: Invalidate cache by key (order_id=1234)
+S --> O: Return updated status
+
+@enduml
